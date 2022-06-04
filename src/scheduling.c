@@ -1,0 +1,308 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "const.h"
+#include "heap.h"
+#include "scheduling.h"
+#include "stack.h"
+
+#define OUTPUT false
+
+// comparison function to sort the tasks by growing release time, and
+// growing deadlines if two release times are equal
+int cmp_func(const void *a, const void *b)
+{
+    Task T1 = *(Task *)a;
+    Task T2 = *(Task *)b;
+    if (T1.release_time == T2.release_time)
+        return T1.deadline - T2.deadline;
+    return T1.release_time - T2.release_time;
+}
+
+void show_tasks(Taskgroup tg)
+{
+    for (int i = 0; i < tg.n; i++)
+        printf("Task %d : %.d %.d\n", tg.tasks[i].i, tg.tasks[i].release_time,
+               tg.tasks[i].deadline);
+    printf("\n");
+}
+
+char char_of_int(int n) // converts an int in the notations used by the paper
+{
+    if (n <= 6)
+        return (char)n + 65;
+    switch (n) {
+    case 7:
+        return 'U';
+    case 8:
+        return 'W';
+    case 9:
+        return 'X';
+    case 10:
+        return 'Z';
+    }
+    return '-';
+}
+
+void show_schedule(int *schedule, int n)
+{
+    bool *shown = (bool *)malloc(n * sizeof(bool));
+    for (int i = 0; i < n; i++)
+        shown[i] = false;
+    int t = 0;
+    for (int i = 0; i < n; i++) {
+        int min_schedule = __INT32_MAX__;
+        int j0 = -1;
+        for (int j = 0; j < n; j++) {
+            if (!shown[j] && schedule[j] < min_schedule) {
+                min_schedule = schedule[j];
+                j0 = j;
+            }
+        }
+        if (j0 == -1)
+            break;
+        for (int j = 0; j < (min_schedule - t); j++)
+            printf("x");
+        printf("| %c  |", char_of_int(j0));
+        shown[j0] = true;
+        t = min_schedule + D;
+    }
+    free(shown);
+    printf("\n");
+}
+
+// extracts a group of tasks to schedule from the file
+Taskgroup get_tasks(FILE *file)
+{
+    int n;
+    fscanf(file, "%d\n", &n);
+    Task *task_arr = (Task *)malloc(n * sizeof(Task));
+    for (int i = 0; i < n; i++) {
+        fscanf(file, "%d %d\n", &task_arr[i].release_time,
+               &task_arr[i].deadline);
+    }
+    return (Taskgroup){.n = n, .tasks = task_arr};
+}
+
+Taskgroup *get_taskgroups(FILE *file,
+                          int *N) // extracts all the taskgroups inside the file
+                                  // and puts the number of taskgroups in N
+{
+    fscanf(file, "%d\n", N);
+    Taskgroup *taskgroups = (Taskgroup *)malloc((*N) * sizeof(Taskgroup));
+    for (int i = 0; i < (*N); i++) {
+        fscanf(file, "\n");
+        taskgroups[i] = get_tasks(file);
+        fscanf(file, "\n");
+    }
+    return taskgroups;
+}
+
+void show_c_times(int *c_times, int n)
+{
+    printf("Critical times : \n");
+    for (int i = 0; i < n; i++) {
+        if (c_times[i] >= 0)
+            printf(" | %d : %d", i, c_times[i]);
+    }
+    printf("\n\n");
+}
+
+Stack f_zones_quadratic(Taskgroup tg)
+// Calculates the forbidden zones in O(n²) time. We suppose the tasks are sorted by growing
+// release times, and growing deadlines if two release times are equal
+{
+    int *c_times = (int *)malloc(tg.n * sizeof(int)); // critical times
+    for (int i = 0; i < tg.n; i++)
+        c_times[i] = -1; // c_times[i] == -1 <=> c_times[i] is not defined
+    Stack st = create_stack(tg.n); // stack of forbidden regions
+
+    /*CALCULATE THE FORBIDDEN REGIONS*/
+
+    for (int i = tg.n - 1; i >= 0; i--) {
+        int ri = tg.tasks[i].release_time, di = tg.tasks[i].deadline;
+        // updates the critical times
+        for (int j = tg.n - 1; j >= 0; j--) {
+            int dj = tg.tasks[j].deadline;
+            if (dj >= di) {
+                c_times[j] = (c_times[j] < 0) ? dj - D : c_times[j] - D;
+                // if c_times[j] is in a forbidden region, set it just below
+                for (int k = 0; k <= st.top; k++) {
+                    if (st.items[k].start < c_times[j] &&
+                        c_times[j] < st.items[k].end)
+                        c_times[j] = st.items[k].start;
+                }
+            }
+        }
+
+        // updates the forbidden regions
+        if (i == 0 || tg.tasks[i - 1].release_time < ri) {
+
+            // sets c to the minimal of defined critical times
+            int c = __INT32_MAX__;
+            for (int i = 0; i < tg.n; i++)
+                if (c_times[i] >= 0)
+                    c = min(c, c_times[i]);
+
+            if (c < ri) {
+                if (OUTPUT)
+                    printf("No schedule is possible\n");
+                free_stack(&st);
+                free(c_times);
+                return (Stack){.items = NULL,
+                               .maxsize = 0,
+                               .top = -1}; // returns an empty stack
+            }
+            // declaration of a new forbidden region
+            if (ri <= c && c < ri + D) {
+                push_st(&st, (Interval){.start = c - D, .end = ri});
+                merge_last_st(&st);
+            }
+        }
+    }
+    free(c_times);
+    return st;
+}
+
+Stack f_zones_q_linear(Taskgroup tg)
+// Calculates the forbidden zones in O(nlogn) time. We suppose the tasks are sorted by growing
+// release times, and growing deadlines if two release times are equal
+{
+
+}
+
+int *schedule_quadratic(Taskgroup tg, Stack st)
+{
+    // schedules the tasks if possible (all have a duration of D) in O(n²)
+    // complexity by a greedy approach
+
+    if (!st.items)
+        return NULL;
+
+    int *schedule = (int *)malloc(tg.n * sizeof(int)), t = 0;
+    for (int i = 0; i < tg.n; i++)
+        schedule[i] = -1; // schedule[i] == -1 <=> tg.tasks[i] in unscheduled
+    /* s is the index of the greatest sup of forbidden zones lower than t, i.e s
+    is the min int such as st.items[s].end < t
+    remember that st.items is an array of disjoint intervals ordered by
+    decreasing inf */
+    int s = st.top;
+    while (true) {
+
+        // the minimum release time of unscheduled tasks ready at t
+        int min_ready_t = __INT32_MAX__;
+        for (int j = 0; j < tg.n; j++) {
+            if (schedule[j] < 0 && tg.tasks[j].release_time <= t) {
+                min_ready_t = min(min_ready_t, tg.tasks[j].release_time);
+                break;
+            }
+        }
+
+        // if no unscheduled task is ready at t, sets i to the min of release
+        // times of unscheduled tasks
+        if (min_ready_t == __INT32_MAX__) {
+            t = __INT32_MAX__;
+            for (int j = 0; j < tg.n; j++)
+                if (schedule[j] < 0)
+                    t = min(t, tg.tasks[j].release_time);
+        }
+        if (t == __INT32_MAX__) // no task to schedule
+            break;
+
+        while (s >= 0 && st.items[s].end < t) { // updates s
+            s--;
+        }
+        if (s >= 0 && st.items[s].start < t &&
+            t < st.items[s].end) { // if t is in a forbidden zone
+            t = st.items[s].end;
+            s++;
+        }
+
+        int min_deadline_t = __INT32_MAX__; // the minimum deadline of
+                                            // unscheduled tasks ready at t
+        int j0 = -1; // the index of the task that has the minimum deadline
+                     // among those ready at t
+
+        for (int j = 0; j < tg.n; j++) {
+            if (schedule[j] < 0 && tg.tasks[j].release_time <= t) {
+                if (tg.tasks[j].deadline < min_deadline_t) {
+                    min_deadline_t = min(min_deadline_t, tg.tasks[j].deadline);
+                    j0 = j;
+                }
+            }
+        }
+        if (j0 == -1) // no task to schedule
+            break;
+        schedule[j0] = t;
+        t += D;
+    }
+
+    free_stack(&st);
+    return schedule;
+}
+
+int *schedule_q_linear(Taskgroup tg, Stack st)
+{
+    // schedules the tasks if possible (all have a duration of D) in O(nlogn)
+    // complexity by a greedy approach
+
+    if (!st.items) // means that a contradiction has been discovered in the
+                   // forbidden zones algorithm
+        return NULL;
+
+    // tg.tasks is sorted by growing release time
+    TaskHeap ready_at_t = create_taskheap(tg.n);
+
+    int t = 0, i = 0, s = st.top, n_scheduled = 0; // number of scheduled tasks
+    int *schedule = (int *)malloc(tg.n * sizeof(int));
+    for (int i = 0; i < tg.n; i++)
+        schedule[i] = -1;
+
+    while (n_scheduled < tg.n) {
+
+        // updates the heap with respect to the new value of t
+        while (i < tg.n && tg.tasks[i].release_time <= t) {
+            if (schedule[i] == -1)
+                add_th(&ready_at_t, tg.tasks[i]);
+            i++;
+        }
+
+        // step 1
+        if (is_empty_th(&ready_at_t)) {
+            while (i < tg.n && schedule[i] != -1)
+                i++;
+            // i is the index of the first unscheduled task in the array ordered
+            // by growing release time, or is tg.n
+            if (i < tg.n) {
+                t = tg.tasks[i].release_time;
+                // updates the tasks ready at t with respect to the new value of
+                // t
+                while (i < tg.n && tg.tasks[i].release_time <= t) {
+                    if (schedule[i] == -1)
+                        add_th(&ready_at_t, tg.tasks[i]);
+                    i++;
+                }
+            }
+        }
+
+        // step 2
+        while (s >= 0 && st.items[s].end < t) { // updates s
+            s--;
+        }
+        if (s >= 0 && st.items[s].start < t &&
+            t < st.items[s].end) { // if t is in a forbidden zone
+            t = st.items[s].end;
+            s++;
+        }
+
+        // step 3
+        Task to_sched = pop_th(&ready_at_t);
+        schedule[to_sched.i] = t;
+        n_scheduled++;
+        t += D;
+    }
+
+    free_taskheap(&ready_at_t);
+    free_stack(&st);
+    return schedule;
+}
