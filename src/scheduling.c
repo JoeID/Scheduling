@@ -5,12 +5,13 @@
 #include "heap.h"
 #include "scheduling.h"
 #include "stack.h"
+#include "taskload_tree.h"
 
 #define OUTPUT false
 
 // comparison function to sort the tasks by growing release time, and
 // growing deadlines if two release times are equal
-int cmp_func(const void *a, const void *b)
+int cmp_func_r_time(const void *a, const void *b)
 {
     Task T1 = *(Task *)a;
     Task T2 = *(Task *)b;
@@ -109,8 +110,9 @@ void show_c_times(int *c_times, int n)
 }
 
 Stack f_zones_quadratic(Taskgroup tg)
-// Calculates the forbidden zones in O(n²) time. We suppose the tasks are sorted by growing
-// release times, and growing deadlines if two release times are equal
+// Calculates the forbidden zones in O(n²) time. We suppose the tasks are sorted
+// by growing release times, and growing deadlines if two release times are
+// equal
 {
     int *c_times = (int *)malloc(tg.n * sizeof(int)); // critical times
     for (int i = 0; i < tg.n; i++)
@@ -165,10 +167,13 @@ Stack f_zones_quadratic(Taskgroup tg)
 }
 
 Stack f_zones_q_linear(Taskgroup tg)
-// Calculates the forbidden zones in O(nlogn) time. We suppose the tasks are sorted by growing
-// release times, and growing deadlines if two release times are equal
+// Calculates the forbidden zones in O(nlogn) time. We suppose the tasks are
+// sorted by growing release times, and growing deadlines if two release times
+// are equal
 {
-
+    return (Stack){.items = NULL,
+                    .maxsize = 0,
+                    .top = -1}; // returns an empty stack
 }
 
 int *schedule_quadratic(Taskgroup tg, Stack st)
@@ -208,7 +213,7 @@ int *schedule_quadratic(Taskgroup tg, Stack st)
         }
         if (t == __INT32_MAX__) // no task to schedule
             break;
-
+            
         while (s >= 0 && st.items[s].end < t) { // updates s
             s--;
         }

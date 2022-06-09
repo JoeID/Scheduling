@@ -43,8 +43,10 @@ with open("results/times.out") as file:
 
     plt.title("Average scheduling time depending on the number of tasks")
     host.set_xlabel("Number of tasks")
-    host.set_ylabel("Average scheduyling time in milliseconds")
+    host.set_ylabel("Average scheduling time in milliseconds")
+    host.set_ylim(0)
     p1.set_ylabel("Failure rate of the algorithms")
+    p1.set_ylim(0)
     
     plt.draw()
     plt.savefig("graphs.png")

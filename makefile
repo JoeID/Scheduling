@@ -20,6 +20,10 @@ bench: $(FICHIERS_C) $(FICHIERS_H) $(BENCH_EXEC)
 bin:
 	mkdir -p bin
 
+count:
+	wc -l src/*.c
+	wc -l src/*.h
+
 $(GEN_EXEC): src/test_gen.c src/const.h | bin
 	$(CC) $(CFLAGS) -o $(GEN_EXEC) src/test_gen.c
 

@@ -1,8 +1,8 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h> //to call mkdir
 #include <time.h>
-#include <assert.h>
 
 #include "const.h"
 #include "scheduling.h"
@@ -10,8 +10,10 @@
 
 //#define DEBUG
 
-double benchmark(Taskgroup *tg, int N, FILE *save, Stack (*f_zones)(Taskgroup), int *(*f_schedule)(Taskgroup, Stack))
-// benchmarks the algorithm using f_zones for part I and schedule for part II. Returns failrate
+double benchmark(Taskgroup *tg, int N, FILE *save, Stack (*f_zones)(Taskgroup),
+                 int *(*f_schedule)(Taskgroup, Stack))
+// benchmarks the algorithm using f_zones for part I and schedule for part II.
+// Returns failrate
 {
     clock_t start, end;
     int failed = 0;
@@ -24,7 +26,7 @@ double benchmark(Taskgroup *tg, int N, FILE *save, Stack (*f_zones)(Taskgroup), 
         Stack st = f_zones(tg[i]);
 
         /* benchmarks part II */
-        
+
         int *schedule = f_schedule(tg[i], st);
         if (schedule) {
             free(schedule);
@@ -62,7 +64,8 @@ int main()
         Taskgroup *taskgroups = get_taskgroups(src, &N); // gets the taskgroups
         fclose(src);
         for (int i = 0; i < N; i++)
-            qsort(taskgroups[i].tasks, taskgroups[i].n, sizeof(Task), cmp_func);
+            qsort(taskgroups[i].tasks, taskgroups[i].n, sizeof(Task),
+                  cmp_func_r_time);
         for (int i = 0; i < N; i++) // sets the number of each task to its
                                     // position in the sorted list
             for (int j = 0; j < taskgroups[i].n; j++)
@@ -74,20 +77,22 @@ int main()
         printf("n=%d\n", n);
 
         // quadratic Part I and quadratic Part II
-        double failrate1 = benchmark(taskgroups, N, save, f_zones_quadratic, schedule_quadratic);
+        double failrate1 = benchmark(taskgroups, N, save, f_zones_quadratic,
+                                     schedule_quadratic);
 
         // quadratic Part I and quasi-linear Part II
-        double failrate2 = benchmark(taskgroups, N, save, f_zones_quadratic, schedule_q_linear);
+        double failrate2 = benchmark(taskgroups, N, save, f_zones_quadratic,
+                                     schedule_q_linear);
 
         // quasi-linear Part I and quadratic Part II
-        double failrate3 = benchmark(taskgroups, N, save, f_zones_q_linear, schedule_quadratic);
+        //double failrate3 = benchmark(taskgroups, N, save, f_zones_q_linear, schedule_quadratic);
 
         // quasi-linear Part I and quasi-linear Part II
-        double failrate4 = benchmark(taskgroups, N, save, f_zones_q_linear, schedule_quadratic);
+        //double failrate4 = benchmark(taskgroups, N, save, f_zones_q_linear, schedule_quadratic);
 
         assert(failrate1 == failrate2);
-        assert(failrate1 == failrate3);
-        assert(failrate1 == failrate4);
+        //assert(failrate1 == failrate3);
+        //assert(failrate1 == failrate4);
         fprintf(save, "0 0 %.3f\n", failrate1);
 
         /* frees the taskgroups */
@@ -107,7 +112,7 @@ int main()
     FILE *src = fopen("sched_tests/test_example", "r");
     Taskgroup *taskgroups = get_taskgroups(src, &N); // gets the taskgroups
     fclose(src);
-    qsort(taskgroups[0].tasks, taskgroups[0].n, sizeof(Task), cmp_func);
+    qsort(taskgroups[0].tasks, taskgroups[0].n, sizeof(Task), cmp_func_r_time);
     for (int j = 0; j < taskgroups[0].n; j++)
         taskgroups[0].tasks[j].i = j;
 

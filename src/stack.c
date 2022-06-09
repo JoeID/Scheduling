@@ -58,6 +58,7 @@ void merge_last_st(Stack *st)
 
 void show_stack(Stack *st)
 {
+    printf("Stack of maxsize %d, top %d\n", st->maxsize, st->top);
     if (is_empty_st(st))
         printf("Empty stack !\n");
 
@@ -67,6 +68,19 @@ void show_stack(Stack *st)
         i++;
     }
     printf("---\n");
+}
+
+bool is_eq_st(Stack *st1, Stack *st2) // checks equality between two stacks
+{
+    if(st1->top != st2->top)
+        return false;
+    int n = st1->top;
+
+    for(int i = 0; i < n; i++)
+        if((st1->items[i].end != st2->items[i].end)
+            || (st1->items[i].start != st2->items[i].start))
+            return false;
+    return true;
 }
 
 void free_stack(Stack *st) { free(st->items); }

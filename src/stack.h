@@ -23,6 +23,7 @@ Interval pop_st(Stack *st);
 void push_st(Stack *st, Interval i);
 void merge_last_st(Stack *st);
 void show_stack(Stack *st);
+bool is_eq_st(Stack *st1, Stack *st2);
 void free_stack(Stack *st);
 
 #endif
