@@ -26,53 +26,10 @@ void show_tasks(Taskgroup tg)
                tg.tasks[i].deadline);
     printf("\n");
 }
-/*
-char char_of_int(int n) // converts an int in the notations used by the paper
-{
-    if (n <= 6)
-        return (char)n + 65;
-    switch (n) {
-    case 7:
-        return 'U';
-    case 8:
-        return 'W';
-    case 9:
-        return 'X';
-    case 10:
-        return 'Z';
-    }
-    return '-';
-}
 
 void show_schedule(int *schedule, int n)
 {
-    bool *shown = (bool *)malloc(n * sizeof(bool));
     for (int i = 0; i < n; i++)
-        shown[i] = false;
-    int t = 0;
-    for (int i = 0; i < n; i++) {
-        int min_schedule = __INT32_MAX__;
-        int j0 = -1;
-        for (int j = 0; j < n; j++) {
-            if (!shown[j] && schedule[j] < min_schedule) {
-                min_schedule = schedule[j];
-                j0 = j;
-            }
-        }
-        if (j0 == -1)
-            break;
-        for (int j = 0; j < (min_schedule - t); j++)
-            printf("x");
-        printf("| %c  |", char_of_int(j0));
-        shown[j0] = true;
-        t = min_schedule + D;
-    }
-    free(shown);
-    printf("\n");
-}*/
-void show_schedule(int *schedule, int n)
-{
-    for(int i = 0; i < n; i++)
         printf("Task %d : %d | ", i, schedule[i]);
     printf("\n");
 }
@@ -90,9 +47,8 @@ Taskgroup get_tasks(FILE *file)
     return (Taskgroup){.n = n, .tasks = task_arr};
 }
 
-Taskgroup *get_taskgroups(FILE *file,
-                          int *N) // extracts all the taskgroups inside the file
-                                  // and puts the number of taskgroups in N
+// extracts the taskgroups inside the file and puts its count in N
+Taskgroup *get_taskgroups(FILE *file, int *N)
 {
     fscanf(file, "%d\n", N);
     Taskgroup *taskgroups = (Taskgroup *)malloc((*N) * sizeof(Taskgroup));
@@ -115,13 +71,13 @@ void show_c_times(int *c_times, int n)
 
 Stack f_zones_quadratic(Taskgroup tg)
 // Calculates the forbidden zones in O(n²) time. We suppose the tasks are sorted
-// by growing release times, and growing deadlines if two release times are
-// equal
+// by growing release times, and growing deadlines if equality
 {
     int *c_times = (int *)malloc(tg.n * sizeof(int)); // critical times
     for (int i = 0; i < tg.n; i++)
-        c_times[i] = tg.tasks[i].deadline; // c_times[i] == tg.tasks[i].deadline <=> c_times[i] is not defined 
-    Stack st = create_stack(tg.n); // stack of forbidden regions
+        c_times[i] = tg.tasks[i].deadline; // c_times[i] == tg.tasks[i].deadline
+                                           // <=> c_times[i] is not defined
+    Stack st = create_stack(tg.n);         // stack of forbidden regions
 
     /*CALCULATE THE FORBIDDEN REGIONS*/
 
@@ -133,10 +89,12 @@ Stack f_zones_quadratic(Taskgroup tg)
             if (dj >= di) {
                 c_times[j] -= D;
                 // if c_times[j] is in a forbidden region, set it just below
-                for (int k = 0; k <= st.top; k++) {
+                for (int k = st.top; k >= 0; k--) { 
                     if (st.items[k].start < c_times[j] &&
                         c_times[j] < st.items[k].end)
                         c_times[j] = st.items[k].start;
+                    if(st.items[k].start > c_times[j])
+                        break;
                 }
             }
         }
@@ -147,13 +105,14 @@ Stack f_zones_quadratic(Taskgroup tg)
             // sets c to the minimal of defined critical times
             int c = __INT32_MAX__;
             for (int i = 0; i < tg.n; i++)
-                if (c_times[i] != tg.tasks[i].deadline) // if c_times[i] is defined
+                // if c_times[i] is defined
+                if (c_times[i] != tg.tasks[i].deadline)
                     c = min(c, c_times[i]);
 
             if (c < ri) {
                 if (OUTPUT)
                     printf("No schedule is possible\n");
-                //empty the stack
+                // empty the stack
                 st.items = NULL;
                 st.top = -1;
                 free(c_times);
@@ -172,8 +131,7 @@ Stack f_zones_quadratic(Taskgroup tg)
 
 Stack f_zones_q_linear(Taskgroup tg)
 // Calculates the forbidden zones in O(nlogn) time. We suppose the tasks are
-// sorted by growing release times, and growing deadlines if two release times
-// are equal
+// sorted by growing release times, and growing deadlines if equality
 {
     return (Stack){
         .items = NULL, .maxsize = 0, .top = -1}; // returns an empty stack
@@ -182,7 +140,8 @@ Stack f_zones_q_linear(Taskgroup tg)
 int *schedule_quadratic(Taskgroup tg, Stack st)
 {
     // schedules the tasks if possible (all have a duration of D) in O(n²)
-    // complexity by a greedy approach. returns NULL or a malloced int*. Does not free the stack
+    // complexity by a greedy approach. Returns NULL or a malloced int*. Does
+    // not free the stack
 
     if (!st.items)
         return NULL;
@@ -223,7 +182,8 @@ int *schedule_quadratic(Taskgroup tg, Stack st)
         if (s >= 0 && st.items[s].start < t &&
             t < st.items[s].end) { // if t is in a forbidden zone
             t = st.items[s].end;
-            s++;
+            if (s < st.top)
+                s++;
         }
 
         int min_deadline_t = __INT32_MAX__; // the minimum deadline of
@@ -234,7 +194,7 @@ int *schedule_quadratic(Taskgroup tg, Stack st)
         for (int j = 0; j < tg.n; j++) {
             if (schedule[j] < 0 && tg.tasks[j].release_time <= t) {
                 if (tg.tasks[j].deadline < min_deadline_t) {
-                    min_deadline_t = min(min_deadline_t, tg.tasks[j].deadline);
+                    min_deadline_t = tg.tasks[j].deadline;
                     j0 = j;
                 }
             }
@@ -251,7 +211,7 @@ int *schedule_quadratic(Taskgroup tg, Stack st)
 int effective_time(int *schedule, int n)
 // returns the effective time of the schedule
 {
-    if(!schedule)
+    if (!schedule)
         return -1;
     int s_min = __INT32_MAX__, s_max = 0;
     for (int i = 0; i < n; i++) {
@@ -264,7 +224,8 @@ int effective_time(int *schedule, int n)
 int *schedule_q_linear(Taskgroup tg, Stack st)
 {
     // schedules the tasks if possible (all have a duration of D) in O(nlogn)
-    // complexity by a greedy approach. returns NULL or a malloced int*. Does not free the stack
+    // complexity by a greedy approach. returns NULL or a malloced int*. Does
+    // not free the stack
 
     if (!st.items) // means that a contradiction has been discovered in the
                    // forbidden zones algorithm
@@ -311,8 +272,16 @@ int *schedule_q_linear(Taskgroup tg, Stack st)
         }
         if (s >= 0 && st.items[s].start < t &&
             t < st.items[s].end) { // if t is in a forbidden zone
-            t = st.items[s].end;
-            s++;
+            t = st.items[s].end;   // update t
+            // updates the tasks ready at t with respect to the new value of
+            // t
+            while (i < tg.n && tg.tasks[i].release_time <= t) {
+                if (schedule[i] == -1)
+                    add_th(&ready_at_t, tg.tasks[i]);
+                i++;
+            }
+            if (s < st.top)
+                s++;
         }
 
         // step 3
@@ -324,4 +293,65 @@ int *schedule_q_linear(Taskgroup tg, Stack st)
 
     free_taskheap(&ready_at_t);
     return schedule;
+}
+
+int *schedule_greedy(Taskgroup tg)
+{
+    // try to greedily schedule the tasks and returns NULL if it failed. We
+    // suppose that the tasks are sorted by growing release time
+    TaskHeap ready_at_t = create_taskheap(tg.n);
+
+    int t = 0, i = 0, n_scheduled = 0; // number of scheduled tasks
+    int *schedule = (int *)malloc(tg.n * sizeof(int));
+    for (int i = 0; i < tg.n; i++)
+        schedule[i] = -1;
+
+    while (n_scheduled < tg.n) {
+
+        // updates the heap with respect to the new value of t
+        while (i < tg.n && tg.tasks[i].release_time <= t) {
+            if (schedule[i] == -1)
+                add_th(&ready_at_t, tg.tasks[i]);
+            i++;
+        }
+
+        if (is_empty_th(&ready_at_t)) {
+            while (i < tg.n && schedule[i] != -1)
+                i++;
+            // i is the index of the first unscheduled task in the array ordered
+            // by growing release time, or is tg.n
+            if (i < tg.n) {
+                t = tg.tasks[i].release_time;
+                // updates the tasks ready at t with respect to the new value of
+                // t
+                while (i < tg.n && tg.tasks[i].release_time <= t) {
+                    if (schedule[i] == -1)
+                        add_th(&ready_at_t, tg.tasks[i]);
+                    i++;
+                }
+            }
+        }
+
+        Task to_sched = pop_th(&ready_at_t);
+        if (to_sched.deadline < t + D) { // if the deadline is not respected
+            free(schedule);
+            return NULL;
+        }
+        schedule[to_sched.i] = t;
+        n_scheduled++;
+        t += D;
+    }
+
+    free_taskheap(&ready_at_t);
+    return schedule;
+}
+
+bool is_valid(Taskgroup tg, int *schedule)
+{
+    // checks if a given schedule is valid
+    for (int i = 0; i < tg.n; i++)
+        if (schedule[i] < tg.tasks[i].release_time ||
+            schedule[i] + D > tg.tasks[i].deadline)
+            return false;
+    return true;
 }

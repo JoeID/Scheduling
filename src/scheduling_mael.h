@@ -9,15 +9,15 @@ typedef struct element { // liste chaînée des tâches
 } Route;
 
 typedef struct ensemble { // scheduling
-    int numero_element; // vaut -1 si c'est un ensemble
+    int numero_element;   // vaut -1 si c'est un ensemble
     int temps_depart;
     struct ensemble *filsG;
     struct ensemble *frereG;
     struct ensemble *frereD;
 } Ensemble;
 
-Ensemble *algo_simons(Route *elems, int nbr_route, int taille_paquet,
-                      int date, int periode);
+Ensemble *algo_simons(Route *elems, int nbr_route, int taille_paquet, int date,
+                      int periode);
 void affichejobs(Route *elem);
 void freeelems(Route *elem);
 void libereens(Ensemble *ens);

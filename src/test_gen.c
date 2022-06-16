@@ -5,13 +5,13 @@
 
 #include "const.h"
 
-int get_rand(int a, int b) // returns a random number between a and b included.
-                           // We suppose a >= b
+int get_rand(int a,
+             int b) // returns a random int between a <= b and b included.
 {
     return a + rand() % (b + 1 - a);
 }
 
-void generate_test(FILE *file, int n, int dmax)
+void generate_test(FILE *file, int n, int rmax, int dmax)
 {
     /*
     Generates n random tasks with deadlines <= dmax and stores them in file
@@ -21,7 +21,6 @@ void generate_test(FILE *file, int n, int dmax)
     */
     fprintf(file, "%d\n", n);
     int r, d; // release time and deadline
-    int rmax = (int) (fact_r * (double) dmax);
     for (int i = 0; i < n; i++) {
         r = get_rand(0, rmax);
         d = get_rand(r + D, max(dmax, r + D));
@@ -30,16 +29,15 @@ void generate_test(FILE *file, int n, int dmax)
     fprintf(file, "\n");
 }
 
-void generate_testcases(FILE *file, int N, int n, int dmax)
+void generate_testcases(FILE *file, int N, int n, int rmax, int dmax)
 {
     /*
     A testcases file is stored as a file where the first line contains N the
-    number of groups of tasks (i.e testcases) and the rest of the file contains
-    N descriptions of groups of n tasks each
+    number of tasks groups followed by N descriptions of groups of n tasks each
     */
     fprintf(file, "%d\n\n", N);
     for (int i = 0; i < N; i++) {
-        generate_test(file, n, dmax);
+        generate_test(file, n, rmax, dmax);
     }
 }
 
@@ -54,8 +52,9 @@ int main()
 
         sprintf(name, "sched_tests/test_n=%d.in", n);
         FILE *file = fopen(name, "w+");
-        int dmax = (int)((double)D * (fact_d * (double)n));
-        generate_testcases(file, Ntests, n, dmax);
+        int dmax = (int)((double)D * (double)(n + add_c));
+        int rmax = (int)(fact_r * (double)dmax);
+        generate_testcases(file, Ntests, n, rmax, dmax);
         fclose(file);
     }
     return 0;

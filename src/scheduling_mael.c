@@ -10,8 +10,8 @@ All rights reserved.
 #include <stdlib.h>
 #include <time.h>
 
-#include "scheduling_mael.h"
 #include "const.h"
+#include "scheduling_mael.h"
 
 //#define DEBUG
 
@@ -105,7 +105,7 @@ Route *ajoute_elemt(Route *elem, int index, int release, int deadline)
         return new;
     }
 
-    while (elem->next) { 
+    while (elem->next) {
 
         if (elem->next->release > release) // inser avant
         {
@@ -369,8 +369,8 @@ Ensemble *cpyens(Ensemble *ens)
         cpy->frereD->frereG = cpy;
     return cpy;
 }
-Ensemble *invade(Ensemble *ens, Route *touselems, int depart,
-                 int taille_paquet, int periode)
+Ensemble *invade(Ensemble *ens, Route *touselems, int depart, int taille_paquet,
+                 int periode)
 {
 
     Ensemble *ens2 = NULL;
@@ -998,8 +998,8 @@ periode)
         }
         return m_i;
 }*/
-Ensemble *algo_simons(Route *elems, int nbr_route, int taille_paquet,
-                      int date, int periode)
+Ensemble *algo_simons(Route *elems, int nbr_route, int taille_paquet, int date,
+                      int periode)
 {
     int i;
     Route *elems2 = cpy_elems(elems);
@@ -1048,7 +1048,7 @@ Ensemble *algo_simons(Route *elems, int nbr_route, int taille_paquet,
             if (ens == NULL) {
                 // affichejobs(elems2);
                 // printf(" NO PULL(%d) FOUND\n",crisise->index);
-				// WARNING ne pas free elems ici !!!!!
+                // WARNING ne pas free elems ici !!!!!
                 freeelems(elems2);
                 return NULL;
             }
@@ -1153,7 +1153,8 @@ int check_Deadlines(int *tab, int size)
     return 1;
 }
 
-int wrapper_algo(int *release, int *deadline, int nbr_route, int job_size) // WARNING pk une liste chainee
+int wrapper_algo(int *release, int *deadline, int nbr_route,
+                 int job_size) // WARNING pk une liste chainee
 {
     Route *elems;
     Ensemble *ens;
@@ -1173,37 +1174,36 @@ int wrapper_algo(int *release, int *deadline, int nbr_route, int job_size) // WA
     int temps = date_fin(ens, job_size) - date_debut(ens);
     printf("La solution est : \n");
     affiche_ensemble(ens);
-	printf("\n");
+    printf("\n");
     libereens(ens); // WARNING le franglais mdr
     freeelems(elems);
     return temps;
 }
 
 #ifdef DEBUG
-struct Task{
-	int release_time;
-	int deadline;
+struct Task {
+    int release_time;
+    int deadline;
 };
 typedef struct Task Task;
 
 int main()
 {
     srand(time(NULL)); // initialize seed
-	FILE *src = fopen("sched_tests/debug", "r");
-	int n, job_size = D;
-	
-	fscanf(src, "%d\n\n", &n);
+    FILE *src = fopen("sched_tests/debug", "r");
+    int n, job_size = D;
+
+    fscanf(src, "%d\n\n", &n);
     fscanf(src, "%d\n", &n);
-	int release[n], deadline[n];
+    int release[n], deadline[n];
     for (int i = 0; i < n; i++) {
-        fscanf(src, "%d %d\n", &release[i],
-               &deadline[i]);
+        fscanf(src, "%d %d\n", &release[i], &deadline[i]);
     }
-	
+
     printf("Temps effectif %d \n",
            wrapper_algo(release, deadline, n, job_size));
 
-	fclose(src);
+    fclose(src);
     return 0;
 }
 #endif

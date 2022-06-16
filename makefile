@@ -13,7 +13,7 @@ all: $(FICHIERS_C) $(FICHIERS_H) $(GEN_EXEC) $(BENCH_EXEC)
 	firefox graphs.png
 
 test:
-	$(CC) $(CFLAGS) src/heap.c src/stack.c src/taskload_tree.c src/scheduling.c src/scheduling_mael.c src/benchmark.c 
+	$(CC) -pg -Wall -g src/heap.c src/stack.c src/taskload_tree.c src/scheduling.c src/scheduling_mael.c src/benchmark.c 
 	
 bin:
 	mkdir -p bin
@@ -36,7 +36,5 @@ clean:
 	$(RM) sched_tests/*.in
 	$(RM) -r bin/
 	$(RM) -r results/
-	$(RM) $(BENCH_EXEC)
-	$(RM) $(GEN_EXEC)
-	$(RM) graphs.png
+	$(RM) -v !(makefile|save_graph.py|README.md)
 

@@ -156,6 +156,7 @@ int main()
         }
         //show_taskheap(&th);
     }
+    printf("The algorithm is correct\n");
     free_taskheap(&th);
     return 0;
 }*/

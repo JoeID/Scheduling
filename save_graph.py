@@ -15,11 +15,12 @@ mlp.style.use('seaborn')
 
 with open("results/times.out") as file:
     i = 0
-    fact_d = fact_r = 0
+    add_c = fact_r = D = 0
     for line in file:
         if i == 0:
-            fact_d, fact_r = line.split(" ")
-            fact_d = float(fact_d)
+            D, add_c, fact_r = line.split(" ")
+            D = int(D)
+            add_c = int(add_c)
             fact_r = float(fact_r)
         elif i%2 == 0:
             a,b,c,d,e,f = line.split(" ")
@@ -50,7 +51,7 @@ with open("results/times.out") as file:
                  loc="upper left")
     p1.legend(["Failure rate of the algorithms"], loc="upper right")
     
-    host.text(90, -0.01, f"fact_d is {fact_d} and fact_r is {fact_r}")
+    host.text(90, -0.01, f"Duration of a task : D = {D}\nDeadline max : dmax = (n + {add_c}) * D\nRelease time : in [0, {fact_r} * dmax]")
 
     plt.title("Average scheduling time depending on the number of tasks")
     host.set_xlabel("Number of tasks")
