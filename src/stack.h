@@ -14,8 +14,6 @@ typedef struct Stack {
     Interval *items;
 } Stack;
 
-int max(int a, int b);
-int min(int a, int b);
 Stack create_stack(int n);
 bool is_empty_st(Stack *st);
 bool is_full_st(Stack *st);

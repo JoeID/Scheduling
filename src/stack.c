@@ -3,10 +3,6 @@
 
 #include "stack.h"
 
-int max(int a, int b) { return (a >= b) ? a : b; }
-
-int min(int a, int b) { return (a <= b) ? a : b; }
-
 Stack create_stack(int n)
 {
     Interval *intervals = (Interval *)malloc(n * sizeof(Interval));
@@ -72,31 +68,31 @@ void show_stack(Stack *st)
 
 bool is_eq_st(Stack *st1, Stack *st2) // checks equality between two stacks
 {
-    if(st1->top != st2->top)
+    if (st1->top != st2->top)
         return false;
     int n = st1->top;
 
-    for(int i = 0; i < n; i++)
-        if((st1->items[i].end != st2->items[i].end)
-            || (st1->items[i].start != st2->items[i].start))
+    for (int i = 0; i < n; i++)
+        if ((st1->items[i].end != st2->items[i].end) ||
+            (st1->items[i].start != st2->items[i].start))
             return false;
     return true;
 }
 
 void free_stack(Stack *st) { free(st->items); }
-
-/*int main()
+/*
+int main()
 {
     Stack st = create_stack(50);
     Interval i1 = (Interval) {.start = 1, .end = 3};
     Interval i2 = (Interval) {.start = 0, .end = 2};
-    push(&st, i1);
-    push(&st, i2);
+    push_st(&st, i1);
+    push_st(&st, i2);
     show_stack(&st);
-    merge_last(&st);
+    merge_last_st(&st);
     show_stack(&st);
 
-    pop(&st);
+    pop_st(&st);
     show_stack(&st);
 
     free_stack(&st);

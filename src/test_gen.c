@@ -5,11 +5,8 @@
 
 #include "const.h"
 
-int max(int a, int b) { return (a >= b) ? a : b; }
-
-int min(int a, int b) { return (a <= b) ? a : b; }
-
-int get_rand(int a, int b) // returns a random number between a and b included. We suppose a >= b
+int get_rand(int a, int b) // returns a random number between a and b included.
+                           // We suppose a >= b
 {
     return a + rand() % (b + 1 - a);
 }
@@ -24,9 +21,10 @@ void generate_test(FILE *file, int n, int dmax)
     */
     fprintf(file, "%d\n", n);
     int r, d; // release time and deadline
+    int rmax = (int) (fact_r * (double) dmax);
     for (int i = 0; i < n; i++) {
-        r = get_rand(0, dmax / 2);
-        d = get_rand(r + D, dmax);
+        r = get_rand(0, rmax);
+        d = get_rand(r + D, max(dmax, r + D));
         fprintf(file, "%d %d\n", r, d);
     }
     fprintf(file, "\n");
@@ -56,8 +54,7 @@ int main()
 
         sprintf(name, "sched_tests/test_n=%d.in", n);
         FILE *file = fopen(name, "w+");
-        int dmax = (int) ((double)D * (fact * (double)n));
-        dmax = max(dmax, 2 * D);
+        int dmax = (int)((double)D * (fact_d * (double)n));
         generate_testcases(file, Ntests, n, dmax);
         fclose(file);
     }

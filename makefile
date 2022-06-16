@@ -12,10 +12,8 @@ all: $(FICHIERS_C) $(FICHIERS_H) $(GEN_EXEC) $(BENCH_EXEC)
 	python3 save_graph.py
 	firefox graphs.png
 
-bench: $(FICHIERS_C) $(FICHIERS_H) $(BENCH_EXEC)
-	./$(BENCH_EXEC)
-	python3 save_graph.py
-	firefox graphs.png
+test:
+	$(CC) $(CFLAGS) src/heap.c src/stack.c src/taskload_tree.c src/scheduling.c src/scheduling_mael.c src/benchmark.c 
 	
 bin:
 	mkdir -p bin
@@ -27,8 +25,8 @@ count:
 $(GEN_EXEC): src/test_gen.c src/const.h | bin
 	$(CC) $(CFLAGS) -o $(GEN_EXEC) src/test_gen.c
 
-$(BENCH_EXEC): src/benchmark.c src/scheduling.c src/heap.c src/stack.c src/scheduling.h src/stack.h src/heap.h | bin
-	$(CC) $(CFLAGS) -o $(BENCH_EXEC) src/heap.c src/stack.c src/scheduling.c src/benchmark.c 
+$(BENCH_EXEC): src/benchmark.c src/scheduling.c src/heap.c src/stack.c src/taskload_tree.c src/scheduling_mael.c src/scheduling_mael.h src/taskload_tree.h src/scheduling.h src/stack.h src/heap.h | bin
+	$(CC) $(CFLAGS) -o $(BENCH_EXEC) src/heap.c src/stack.c src/taskload_tree.c src/scheduling.c src/scheduling_mael.c src/benchmark.c 
 	
 format:
 	clang-format -i src/*.c

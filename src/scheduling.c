@@ -6,7 +6,6 @@
 #include "scheduling.h"
 #include "stack.h"
 #include "taskload_tree.h"
-
 #define OUTPUT false
 
 // comparison function to sort the tasks by growing release time, and
@@ -23,11 +22,11 @@ int cmp_func_r_time(const void *a, const void *b)
 void show_tasks(Taskgroup tg)
 {
     for (int i = 0; i < tg.n; i++)
-        printf("Task %d : %.d %.d\n", tg.tasks[i].i, tg.tasks[i].release_time,
+        printf("Task %d(%d, %d) ", tg.tasks[i].i, tg.tasks[i].release_time,
                tg.tasks[i].deadline);
     printf("\n");
 }
-
+/*
 char char_of_int(int n) // converts an int in the notations used by the paper
 {
     if (n <= 6)
@@ -70,6 +69,12 @@ void show_schedule(int *schedule, int n)
     }
     free(shown);
     printf("\n");
+}*/
+void show_schedule(int *schedule, int n)
+{
+    for(int i = 0; i < n; i++)
+        printf("Task %d : %d | ", i, schedule[i]);
+    printf("\n");
 }
 
 // extracts a group of tasks to schedule from the file
@@ -103,8 +108,7 @@ void show_c_times(int *c_times, int n)
 {
     printf("Critical times : \n");
     for (int i = 0; i < n; i++) {
-        if (c_times[i] >= 0)
-            printf(" | %d : %d", i, c_times[i]);
+        printf(" | %d : %d", i, c_times[i]);
     }
     printf("\n\n");
 }
@@ -116,7 +120,7 @@ Stack f_zones_quadratic(Taskgroup tg)
 {
     int *c_times = (int *)malloc(tg.n * sizeof(int)); // critical times
     for (int i = 0; i < tg.n; i++)
-        c_times[i] = -1; // c_times[i] == -1 <=> c_times[i] is not defined
+        c_times[i] = tg.tasks[i].deadline; // c_times[i] == tg.tasks[i].deadline <=> c_times[i] is not defined 
     Stack st = create_stack(tg.n); // stack of forbidden regions
 
     /*CALCULATE THE FORBIDDEN REGIONS*/
@@ -127,7 +131,7 @@ Stack f_zones_quadratic(Taskgroup tg)
         for (int j = tg.n - 1; j >= 0; j--) {
             int dj = tg.tasks[j].deadline;
             if (dj >= di) {
-                c_times[j] = (c_times[j] < 0) ? dj - D : c_times[j] - D;
+                c_times[j] -= D;
                 // if c_times[j] is in a forbidden region, set it just below
                 for (int k = 0; k <= st.top; k++) {
                     if (st.items[k].start < c_times[j] &&
@@ -143,17 +147,17 @@ Stack f_zones_quadratic(Taskgroup tg)
             // sets c to the minimal of defined critical times
             int c = __INT32_MAX__;
             for (int i = 0; i < tg.n; i++)
-                if (c_times[i] >= 0)
+                if (c_times[i] != tg.tasks[i].deadline) // if c_times[i] is defined
                     c = min(c, c_times[i]);
 
             if (c < ri) {
                 if (OUTPUT)
                     printf("No schedule is possible\n");
-                free_stack(&st);
+                //empty the stack
+                st.items = NULL;
+                st.top = -1;
                 free(c_times);
-                return (Stack){.items = NULL,
-                               .maxsize = 0,
-                               .top = -1}; // returns an empty stack
+                return st;
             }
             // declaration of a new forbidden region
             if (ri <= c && c < ri + D) {
@@ -171,15 +175,14 @@ Stack f_zones_q_linear(Taskgroup tg)
 // sorted by growing release times, and growing deadlines if two release times
 // are equal
 {
-    return (Stack){.items = NULL,
-                    .maxsize = 0,
-                    .top = -1}; // returns an empty stack
+    return (Stack){
+        .items = NULL, .maxsize = 0, .top = -1}; // returns an empty stack
 }
 
 int *schedule_quadratic(Taskgroup tg, Stack st)
 {
     // schedules the tasks if possible (all have a duration of D) in O(n²)
-    // complexity by a greedy approach
+    // complexity by a greedy approach. returns NULL or a malloced int*. Does not free the stack
 
     if (!st.items)
         return NULL;
@@ -213,7 +216,7 @@ int *schedule_quadratic(Taskgroup tg, Stack st)
         }
         if (t == __INT32_MAX__) // no task to schedule
             break;
-            
+
         while (s >= 0 && st.items[s].end < t) { // updates s
             s--;
         }
@@ -242,14 +245,26 @@ int *schedule_quadratic(Taskgroup tg, Stack st)
         t += D;
     }
 
-    free_stack(&st);
     return schedule;
+}
+
+int effective_time(int *schedule, int n)
+// returns the effective time of the schedule
+{
+    if(!schedule)
+        return -1;
+    int s_min = __INT32_MAX__, s_max = 0;
+    for (int i = 0; i < n; i++) {
+        s_min = min(s_min, schedule[i]);
+        s_max = max(s_max, schedule[i]);
+    }
+    return s_max + D - s_min;
 }
 
 int *schedule_q_linear(Taskgroup tg, Stack st)
 {
     // schedules the tasks if possible (all have a duration of D) in O(nlogn)
-    // complexity by a greedy approach
+    // complexity by a greedy approach. returns NULL or a malloced int*. Does not free the stack
 
     if (!st.items) // means that a contradiction has been discovered in the
                    // forbidden zones algorithm
@@ -308,6 +323,5 @@ int *schedule_q_linear(Taskgroup tg, Stack st)
     }
 
     free_taskheap(&ready_at_t);
-    free_stack(&st);
     return schedule;
 }
