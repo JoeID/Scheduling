@@ -2,11 +2,12 @@
 #define SCHED_SCHED
 
 #include "stack.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef struct Task {
     int release_time;
     int deadline;
-    int i; // the number of the task
 } Task;
 
 typedef struct Taskgroup { // struct to store a group of n tasks to schedule

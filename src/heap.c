@@ -9,7 +9,7 @@
 
 TaskHeap create_taskheap(int n)
 {
-    Task *items = (Task *)malloc((n + 1) * sizeof(Task));
+    Task_wid *items = (Task_wid *)malloc((n + 1) * sizeof(Task_wid));
     return (TaskHeap){.items = items, .maxsize = n, .last = 0};
 }
 
@@ -17,7 +17,7 @@ void free_taskheap(TaskHeap *th) { free(th->items); }
 
 void exchange(TaskHeap *th, int i, int j)
 {
-    Task tmp = th->items[i];
+    Task_wid tmp = th->items[i];
     th->items[i] = th->items[j];
     th->items[j] = tmp;
 }
@@ -30,7 +30,7 @@ void equilibrate_parent(TaskHeap *th, int i)
 {
     // exchanges th->items[i] with its parents until its deadline is greater
     // than its parent'
-    while (i > 1 && th->items[i].deadline < th->items[i / 2].deadline) {
+    while (i > 1 && th->items[i].t.deadline < th->items[i / 2].t.deadline) {
         exchange(th, i, i / 2);
         i = i / 2;
     }
@@ -46,17 +46,17 @@ void equilibrate_child(TaskHeap *th, int i)
 
         if (2 * i + 1 > th->last) { // no right child
 
-            int d_left = th->items[2 * i].deadline;
-            int d = th->items[i].deadline;
+            int d_left = th->items[2 * i].t.deadline;
+            int d = th->items[i].t.deadline;
             if (d > d_left)
                 exchange(th, i, 2 * i);
             return;
         }
         else {
 
-            int d_left = th->items[2 * i].deadline;
-            int d_right = th->items[2 * i + 1].deadline;
-            int d = th->items[i].deadline;
+            int d_left = th->items[2 * i].t.deadline;
+            int d_right = th->items[2 * i + 1].t.deadline;
+            int d = th->items[i].t.deadline;
 
             if (d > d_left && d_left <= d_right) {
                 // exchange with left child
@@ -75,25 +75,25 @@ void equilibrate_child(TaskHeap *th, int i)
     }
 }
 
-void add_th(TaskHeap *th, Task t)
+void add_th(TaskHeap *th, Task t, int i)
 {
     if (is_full_th(th)) {
         fprintf(stderr, "Error : the heap is full\n");
         exit(EXIT_FAILURE);
     }
     th->last = th->last + 1;
-    th->items[th->last] = t;
+    th->items[th->last] = (Task_wid){.i = i, .t = t};
     equilibrate_parent(th, th->last);
 }
 
-Task pop_th(TaskHeap *th)
+Task_wid pop_th(TaskHeap *th)
 {
     if (is_empty_th(th)) {
         fprintf(stderr, "Error : the heap is empty\n");
         exit(EXIT_FAILURE);
     }
 
-    Task res = th->items[1];
+    Task_wid res = th->items[1];
     th->items[1] = th->items[th->last];
     th->last = th->last - 1;
     equilibrate_child(th, 1);
@@ -109,7 +109,8 @@ void show_taskheap(TaskHeap *th)
 
     int to_print = 1;
     for (int i = 1; i <= th->last; i++) {
-        printf("Task %d %d ", th->items[i].release_time, th->items[i].deadline);
+        printf("Task %d %d ", th->items[i].t.release_time,
+               th->items[i].t.deadline);
         to_print--;
         if (to_print == 0) {
             to_print = i + 1;

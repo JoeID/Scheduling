@@ -5,9 +5,9 @@
 
 #define add_c                                                                  \
     10 // deadline max for generating n tasks is dmax = D * (n + add_c)
-#define fact_r 0.95 // release time max for generating n tasks is fact_r * dmax
-#define Ntests 10000  // number of tests
-#define nmax 100
+#define fact_r 0.95  // release time max for generating n tasks is fact_r * dmax
+#define Ntests 10000 // number of tests
+#define nmax 1000
 #define D 5 // duration of a task
 
 #define true 1

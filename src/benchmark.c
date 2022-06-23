@@ -120,10 +120,6 @@ int main()
         for (int i = 0; i < N; i++)
             qsort(taskgroups[i].tasks, taskgroups[i].n, sizeof(Task),
                   cmp_func_r_time);
-        for (int i = 0; i < N; i++) // sets the number of each task to its
-                                    // position in the sorted list
-            for (int j = 0; j < taskgroups[i].n; j++)
-                taskgroups[i].tasks[j].i = j;
 
         /* benchmarks the algorithms on the taskgroups */
 
@@ -179,11 +175,11 @@ int main()
 
         // Mael's implementation of Simons' algorithm
         // benchmark_mael(taskgroups, N, save);
-        
+
         assert(failed1 == failed2);
         // assert(failed1 == failed3);
         // assert(failed1 == failed4);
-        fprintf(save, "%.3f\n", ((double) failed1)/N);
+        fprintf(save, "%.3f\n", ((double)failed1) / N);
 
         /* frees the taskgroups */
 

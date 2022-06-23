@@ -22,7 +22,7 @@ int cmp_func_r_time(const void *a, const void *b)
 void show_tasks(Taskgroup tg)
 {
     for (int i = 0; i < tg.n; i++)
-        printf("Task %d(%d, %d) ", tg.tasks[i].i, tg.tasks[i].release_time,
+        printf("Task %d(%d, %d) ", i, tg.tasks[i].release_time,
                tg.tasks[i].deadline);
     printf("\n");
 }
@@ -243,7 +243,7 @@ int *schedule_q_linear(Taskgroup tg, Stack st)
         // updates the heap with respect to the new value of t
         while (i < tg.n && tg.tasks[i].release_time <= t) {
             if (schedule[i] == -1)
-                add_th(&ready_at_t, tg.tasks[i]);
+                add_th(&ready_at_t, tg.tasks[i], i);
             i++;
         }
 
@@ -259,7 +259,7 @@ int *schedule_q_linear(Taskgroup tg, Stack st)
                 // t
                 while (i < tg.n && tg.tasks[i].release_time <= t) {
                     if (schedule[i] == -1)
-                        add_th(&ready_at_t, tg.tasks[i]);
+                        add_th(&ready_at_t, tg.tasks[i], i);
                     i++;
                 }
             }
@@ -276,7 +276,7 @@ int *schedule_q_linear(Taskgroup tg, Stack st)
             // t
             while (i < tg.n && tg.tasks[i].release_time <= t) {
                 if (schedule[i] == -1)
-                    add_th(&ready_at_t, tg.tasks[i]);
+                    add_th(&ready_at_t, tg.tasks[i], i);
                 i++;
             }
             if (s < st.top)
@@ -284,7 +284,7 @@ int *schedule_q_linear(Taskgroup tg, Stack st)
         }
 
         // step 3
-        Task to_sched = pop_th(&ready_at_t);
+        Task_wid to_sched = pop_th(&ready_at_t);
         schedule[to_sched.i] = t;
         n_scheduled++;
         t += D;
@@ -310,7 +310,7 @@ int *schedule_greedy(Taskgroup tg)
         // updates the heap with respect to the new value of t
         while (i < tg.n && tg.tasks[i].release_time <= t) {
             if (schedule[i] == -1)
-                add_th(&ready_at_t, tg.tasks[i]);
+                add_th(&ready_at_t, tg.tasks[i], i);
             i++;
         }
 
@@ -325,14 +325,14 @@ int *schedule_greedy(Taskgroup tg)
                 // t
                 while (i < tg.n && tg.tasks[i].release_time <= t) {
                     if (schedule[i] == -1)
-                        add_th(&ready_at_t, tg.tasks[i]);
+                        add_th(&ready_at_t, tg.tasks[i], i);
                     i++;
                 }
             }
         }
 
-        Task to_sched = pop_th(&ready_at_t);
-        if (to_sched.deadline < t + D) { // if the deadline is not respected
+        Task_wid to_sched = pop_th(&ready_at_t);
+        if (to_sched.t.deadline < t + D) { // if the deadline is not respected
             free(schedule);
             free_taskheap(&ready_at_t);
             return NULL;
