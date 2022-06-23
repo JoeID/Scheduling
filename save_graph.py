@@ -51,7 +51,7 @@ with open("results/times.out") as file:
                  loc="upper left")
     p1.legend(["Failure rate of the algorithms"], loc="upper right")
     
-    host.text(90, -0.01, f"Duration of a task : D = {D}\nDeadline max : dmax = (n + {add_c}) * D\nRelease time : in [0, {fact_r} * dmax]")
+    host.text(90, -0.003, f"Duration of a task : D = {D}\nDeadline max : dmax = (n + {add_c}) * D\nRelease time : in [0, {fact_r} * dmax]")
 
     plt.title("Average scheduling time depending on the number of tasks")
     host.set_xlabel("Number of tasks")

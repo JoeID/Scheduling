@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h> //to call mkdir
@@ -11,31 +12,40 @@
 
 //#define DEBUG
 
-double benchmark(Taskgroup *tg, int N, FILE *save, Stack (*f_zones)(Taskgroup),
-                 int *(*f_schedule)(Taskgroup, Stack))
+struct arg_ret { // to pass arguments to pthreads and get values
+    Taskgroup *tg;
+    int N;
+    Stack (*f_zones)(Taskgroup);
+    int *(*f_schedule)(Taskgroup, Stack);
+    double elapsed;
+    int failed;
+};
+typedef struct arg_ret Arg_ret;
+
+void benchmark(Arg_ret *arg_ret)
 // benchmarks the algorithm using f_zones for part I and schedule for part II.
 // Returns failrate
 {
     clock_t start, end;
     int failed = 0;
     double elapsed = 0;
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < arg_ret->N; i++) {
 
         start = clock();
 
         // try to greedily solve the pb, call the real algorithm if it fails
-        int *schedule = schedule_greedy(tg[i]);
+        int *schedule = schedule_greedy(arg_ret->tg[i]);
         if (schedule) {
-            assert(is_valid(tg[i], schedule));
+            assert(is_valid(arg_ret->tg[i], schedule));
             free(schedule);
         }
         else {
-            Stack st = f_zones(tg[i]);
+            Stack st = arg_ret->f_zones(arg_ret->tg[i]);
 
-            int *schedule = f_schedule(tg[i], st);
+            int *schedule = arg_ret->f_schedule(arg_ret->tg[i], st);
             free_stack(&st);
             if (schedule) {
-                assert(is_valid(tg[i], schedule));
+                assert(is_valid(arg_ret->tg[i], schedule));
                 free(schedule);
             }
             else {
@@ -47,10 +57,10 @@ double benchmark(Taskgroup *tg, int N, FILE *save, Stack (*f_zones)(Taskgroup),
         elapsed += (1000 * (double)(end - start));
     }
     // calculates average time and failure rate
-    fprintf(save, "%.6f ", elapsed / (N * CLOCKS_PER_SEC));
-    return ((double)failed) / ((double)N);
+    arg_ret->elapsed = elapsed / (arg_ret->N * CLOCKS_PER_SEC);
+    arg_ret->failed = failed;
 }
-
+/*
 void benchmark_mael(Taskgroup *tg, int N, FILE *save)
 {
     clock_t start, end;
@@ -79,23 +89,31 @@ void benchmark_mael(Taskgroup *tg, int N, FILE *save)
     // calculates average time and failure rate
     fprintf(save, "%.6f ", elapsed / (N * CLOCKS_PER_SEC));
 }
+*/
+void *benchmark_splitted(void *args)
+{
+    benchmark((Arg_ret *)args);
+    return NULL;
+}
 
 int main()
 {
 #ifndef DEBUG
 
     char name[100];
+    pthread_t threads[Nproc];
     mkdir("results", S_IRWXU);
     srand((unsigned)time(NULL)); // initializes the seed
     FILE *save = fopen("results/times.out", "w+");
     fprintf(save, "%d %d %.2f\n", D, add_c, fact_r);
-    int N = 0;
 
     for (int n = 1; n <= nmax; n++) {
+        int N = 0, failed1 = 0, failed2 = 0, failed3 = 0, failed4 = 0;
 
         /* opens the file, extracts the taskgroups and sorts them */
 
         sprintf(name, "sched_tests/test_n=%d.in", n);
+        double elapsed = 0;
         FILE *src = fopen(name, "r");
         Taskgroup *taskgroups = get_taskgroups(src, &N);
         fclose(src);
@@ -112,13 +130,43 @@ int main()
         fprintf(save, "n=%d\n", n);
         printf("n=%d\n", n);
 
+        Arg_ret *args = (Arg_ret *)malloc(Nproc * sizeof(Arg_ret));
+        for (int i = 0; i < Nproc;
+             i++) { // suppose that N is a multiple of Nproc
+            args[i].f_zones = f_zones_quadratic;
+            args[i].N = N / Nproc;
+            args[i].tg = taskgroups + i * N / Nproc;
+        }
+        args[Nproc - 1].N = N - (Nproc - 1) * N / Nproc;
+        args[Nproc - 1].tg = taskgroups + N - args[Nproc - 1].N;
+
         // quadratic Part I and quadratic Part II
-        double failrate1 = benchmark(taskgroups, N, save, f_zones_quadratic,
-                                     schedule_quadratic);
+        for (int i = 0; i < Nproc; i++)
+            args[i].f_schedule = schedule_quadratic;
+        for (int i = 0; i < Nproc; i++)
+            pthread_create(threads + i, NULL, benchmark_splitted, args + i);
+        for (int i = 0; i < Nproc; i++)
+            pthread_join(threads[i], NULL);
+        for (int i = 0; i < Nproc; i++) {
+            failed1 += args[i].failed;
+            elapsed += args[i].elapsed;
+        }
+        fprintf(save, "%.3f ", elapsed);
+        elapsed = 0;
 
         // quadratic Part I and quasi-linear Part II
-        double failrate2 = benchmark(taskgroups, N, save, f_zones_quadratic,
-                                     schedule_q_linear);
+        for (int i = 0; i < Nproc; i++)
+            args[i].f_schedule = schedule_q_linear;
+        for (int i = 0; i < Nproc; i++)
+            pthread_create(threads + i, NULL, benchmark_splitted, args + i);
+        for (int i = 0; i < Nproc; i++)
+            pthread_join(threads[i], NULL);
+        for (int i = 0; i < Nproc; i++) {
+            failed2 += args[i].failed;
+            elapsed += args[i].elapsed;
+        }
+        fprintf(save, "%.3f ", elapsed);
+        elapsed = 0;
 
         // quasi-linear Part I and quadratic Part II
         // double failrate3 = benchmark(taskgroups, N, save, f_zones_q_linear,
@@ -131,17 +179,18 @@ int main()
 
         // Mael's implementation of Simons' algorithm
         // benchmark_mael(taskgroups, N, save);
-
-        assert(failrate1 == failrate2);
-        // assert(failrate1 == failrate3);
-        // assert(failrate1 == failrate4);
-        fprintf(save, "%.3f\n", failrate1);
+        
+        assert(failed1 == failed2);
+        // assert(failed1 == failed3);
+        // assert(failed1 == failed4);
+        fprintf(save, "%.3f\n", ((double) failed1)/N);
 
         /* frees the taskgroups */
 
         for (int i = 0; i < N; i++)
             free(taskgroups[i].tasks);
         free(taskgroups);
+        free(args);
     }
 
     fclose(save);

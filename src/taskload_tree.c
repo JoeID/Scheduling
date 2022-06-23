@@ -160,51 +160,6 @@ void fill_tlt(TaskLoadTree *tlt, Taskgroup *tg)
 }
 
 /*
-void increment_taskload2(TaskLoadTree *tlt, int deadline)
-// increments the taskload corresponding to the given deadline. i is the index
-// of the current node taskload is obtained by summing the n_part from the root
-// to the corresponding deadline
-{
-    int left = 0, right = tlt->last, i = (right - left) / 2;
-    int i_left = max(left, (left + i - 1) / 2),
-        i_right = min(right, (right + i + 1) / 2);
-    int taskload = 0;
-
-    while(right - left > 0){
-
-        Element node = tlt->items[i];
-        int i_left = node.i_left;
-
-        if (node.deadline == deadline) {
-            tlt->items[i].n_part += 1;
-            if (i_left != -1)
-                tlt->items[i_left].n_part -= 1;
-            return;
-        }
-        else if (node.deadline > deadline) { // search on the left
-            if (node.i_left == -1) {
-                fprintf(stderr,
-                        "Error : the deadline %d doesn't exist in the tree\n",
-                        deadline);
-                exit(EXIT_FAILURE);
-            }
-            tlt->items[i].n_part += 1;
-            if (i_left != -1) // decrement left son bc it's lower
-                tlt->items[i_left].n_part -= 1;
-            right = i,
-        }
-        else { // search on the right
-            if (node.i_right == -1) {
-                fprintf(stderr,
-                        "Error : the deadline %d doesn't exist in the tree\n",
-                        deadline);
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
-
-
-}
 
 void test1()
 {

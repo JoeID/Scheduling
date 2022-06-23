@@ -89,11 +89,11 @@ Stack f_zones_quadratic(Taskgroup tg)
             if (dj >= di) {
                 c_times[j] -= D;
                 // if c_times[j] is in a forbidden region, set it just below
-                for (int k = st.top; k >= 0; k--) { 
+                for (int k = st.top; k >= 0; k--) {
                     if (st.items[k].start < c_times[j] &&
                         c_times[j] < st.items[k].end)
                         c_times[j] = st.items[k].start;
-                    if(st.items[k].start > c_times[j])
+                    if (st.items[k].start > c_times[j])
                         break;
                 }
             }
@@ -113,7 +113,6 @@ Stack f_zones_quadratic(Taskgroup tg)
                 if (OUTPUT)
                     printf("No schedule is possible\n");
                 // empty the stack
-                st.items = NULL;
                 st.top = -1;
                 free(c_times);
                 return st;
@@ -143,7 +142,7 @@ int *schedule_quadratic(Taskgroup tg, Stack st)
     // complexity by a greedy approach. Returns NULL or a malloced int*. Does
     // not free the stack
 
-    if (!st.items)
+    if (is_empty_st(&st))
         return NULL;
 
     int *schedule = (int *)malloc(tg.n * sizeof(int)), t = 0;
@@ -227,8 +226,8 @@ int *schedule_q_linear(Taskgroup tg, Stack st)
     // complexity by a greedy approach. returns NULL or a malloced int*. Does
     // not free the stack
 
-    if (!st.items) // means that a contradiction has been discovered in the
-                   // forbidden zones algorithm
+    if (is_empty_st(&st)) // means that a contradiction has been discovered in
+                          // the forbidden zones algorithm
         return NULL;
 
     // tg.tasks is sorted by growing release time
@@ -335,6 +334,7 @@ int *schedule_greedy(Taskgroup tg)
         Task to_sched = pop_th(&ready_at_t);
         if (to_sched.deadline < t + D) { // if the deadline is not respected
             free(schedule);
+            free_taskheap(&ready_at_t);
             return NULL;
         }
         schedule[to_sched.i] = t;
