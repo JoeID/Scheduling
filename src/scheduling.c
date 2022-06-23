@@ -5,7 +5,6 @@
 #include "heap.h"
 #include "scheduling.h"
 #include "stack.h"
-#include "taskload_tree.h"
 #define OUTPUT false
 
 // comparison function to sort the tasks by growing release time, and
