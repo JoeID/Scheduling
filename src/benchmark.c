@@ -10,7 +10,7 @@
 #include "scheduling_mael.h"
 #include "stack.h"
 
-//#define DEBUG
+#define DEBUG
 
 struct arg_ret { // to pass arguments to pthreads and get values
     Taskgroup *tg;
@@ -94,6 +94,30 @@ void *benchmark_splitted(void *args)
 {
     benchmark((Arg_ret *)args);
     return NULL;
+}
+
+void wrapper_fun(Taskgroup tg)
+// tg.tasks an array of tasks which you can get the size by using tg.n
+// this function doesn't free tg.tasks
+{
+    qsort(tg.tasks, tg.n, sizeof(Task), cmp_func_r_time);
+
+    printf("Scheduling following tasks :\n");
+    show_tasks(tg);
+    Stack st = f_zones_quadratic(tg);
+    printf("Forbidden regions are : \n");
+    show_stack(&st);
+    int *schedule = schedule_q_linear(tg, st);
+    free_stack(&st);
+    if (schedule) {
+        printf("A solution is :\n");
+        show_schedule(schedule, tg.n);
+        printf("Effective time : %d\n", effective_time(schedule, tg.n));
+        free(schedule);
+    }
+    else {
+        printf("Couldn't schedule\n");
+    }
 }
 
 int main()
@@ -190,9 +214,6 @@ int main()
     }
 
     fclose(save);
-
-    return 0;
-
 #else
     // for debug purposes
     int N = 0;
@@ -200,29 +221,8 @@ int main()
     Taskgroup *taskgroups = get_taskgroups(src, &N); // gets the taskgroups
     fclose(src);
     qsort(taskgroups[0].tasks, taskgroups[0].n, sizeof(Task), cmp_func_r_time);
-    for (int j = 0; j < taskgroups[0].n; j++)
-        taskgroups[0].tasks[j].i = j;
 
-    printf("Scheduling following tasks :\n");
-    show_tasks(taskgroups[0]);
-    Stack st = f_zones_quadratic(taskgroups[0]);
-    printf("Forbidden regions are : \n");
-    show_stack(&st);
-    int *schedule = schedule_quadratic(taskgroups[0], st);
-    if (schedule) {
-        printf("A solution is :\n");
-        show_schedule(schedule, taskgroups[0].n);
-    }
-    else {
-        printf("Couldn't schedule\n");
-    }
-    printf("Effective time : %d\n", effective_time(schedule, taskgroups[0].n));
-
-    for (int i = 0; i < N; i++)
-        free(taskgroups[i].tasks);
-    free(taskgroups);
-    free(schedule);
-    return 0;
-
+    wrapper_fun(taskgroups[0]);
 #endif
+    return 0;
 }

@@ -54,9 +54,8 @@ void merge_last_st(Stack *st)
 
 void show_stack(Stack *st)
 {
-    printf("Stack of maxsize %d, top %d\n", st->maxsize, st->top);
     if (is_empty_st(st))
-        printf("Empty stack !\n");
+        printf("Empty stack of forbidden regions !\n");
 
     int i = 0;
     while (i <= st->top) {

@@ -10,7 +10,7 @@ all: $(FICHIERS_C) $(FICHIERS_H) $(GEN_EXEC) $(BENCH_EXEC)
 	./$(GEN_EXEC)
 	./$(BENCH_EXEC)
 	python3 save_graph.py
-	firefox graphs.png
+	firefox graphs.png 
 	
 bin:
 	mkdir -p bin
@@ -25,8 +25,8 @@ count:
 $(GEN_EXEC): src/test_gen.c src/const.h | bin
 	$(CC) $(CFLAGS) -o $(GEN_EXEC) src/test_gen.c
 
-$(BENCH_EXEC): src/benchmark.c src/scheduling.c src/heap.c src/stack.c src/scheduling_mael.c src/scheduling_mael.h src/scheduling.h src/stack.h src/heap.h | bin
-	$(CC) $(CFLAGS) -o $(BENCH_EXEC) src/heap.c src/stack.c src/scheduling.c src/scheduling_mael.c src/benchmark.c 
+$(BENCH_EXEC): src/benchmark.c src/scheduling.c src/heap.c src/f_offsets.c src/stack.c src/taskload_tree.c src/scheduling_mael.c src/scheduling_mael.h src/taskload_tree.h src/scheduling.h src/stack.h src/heap.h src/f_offsets.c | bin
+	$(CC) $(CFLAGS) -o $(BENCH_EXEC) src/heap.c src/f_offsets.c src/stack.c src/taskload_tree.c src/scheduling.c src/scheduling_mael.c src/benchmark.c -pthread
 	
 format:
 	clang-format -i src/*.c
