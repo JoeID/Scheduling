@@ -11,6 +11,9 @@ all: $(FICHIERS_C) $(FICHIERS_H) $(GEN_EXEC) $(BENCH_EXEC)
 	./$(BENCH_EXEC)
 	python3 save_graph.py
 	firefox graphs.png 
+
+test: $(BENCH_EXEC)
+	./$(BENCH_EXEC)
 	
 bin:
 	mkdir -p bin
