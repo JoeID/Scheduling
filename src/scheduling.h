@@ -27,5 +27,6 @@ Taskgroup *get_taskgroups(FILE *file, int *N);
 int effective_time(int *schedule, int n);
 int *schedule_greedy(Taskgroup tg);
 bool is_valid(Taskgroup tg, int *schedule);
+void free_taskgroups(Taskgroup *tgs, int N);
 
 #endif

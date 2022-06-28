@@ -4,9 +4,9 @@
 #include <time.h>
 
 #include "const.h"
+#include "scheduling.h"
 
-int get_rand(int a,
-             int b) // returns a random int between a <= b and b included.
+int get_rand(int a, int b) // returns random int between a <= b and b included
 {
     return a + rand() % (b + 1 - a);
 }
@@ -41,7 +41,33 @@ void generate_testcases(FILE *file, int N, int n, int rmax, int dmax)
     }
 }
 
-int main()
+Taskgroup *get_generate_testcases(int N, int n)
+{
+    /*
+    Does not use a file, returns a taskgroup instead. Used for On The FLy test
+    generation
+    */
+    Taskgroup *taskgroups = (Taskgroup *)malloc(N * sizeof(Taskgroup));
+    int r, d;
+    int dmax = (int)((double)D * (double)(n + add_c));
+    int rmax = (int)(fact_r * (double)dmax);
+    for (int i = 0; i < N; i++) {
+        taskgroups[i].n = n;
+        taskgroups[i].tasks = (Task *)malloc(n * sizeof(Task));
+        for (int j = 0; j < n; j++) {
+            r = get_rand(0, rmax);
+            d = get_rand(r + D, max(dmax, r + D));
+            taskgroups[i].tasks[j].release_time = r;
+            taskgroups[i].tasks[j].deadline = d;
+        }
+    }
+    return taskgroups;
+}
+
+void test_gen()
+/*
+Generates tests and stores them in sched_tests/
+*/
 {
     char name[100];
     srand((unsigned)time(NULL)); // initializes the seed
@@ -57,5 +83,4 @@ int main()
         generate_testcases(file, Ntests, n, rmax, dmax);
         fclose(file);
     }
-    return 0;
 }

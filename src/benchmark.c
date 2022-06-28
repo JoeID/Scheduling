@@ -4,15 +4,17 @@
 #include <stdlib.h>
 #include <sys/stat.h> //to call mkdir
 #include <time.h>
+#include <string.h>
 
 #include "const.h"
 #include "scheduling.h"
 #include "scheduling_mael.h"
 #include "stack.h"
+#include "test_gen.h"
 
-#define DEBUG
+//#define DEBUG
 
-struct arg_ret { // to pass arguments to pthreads and get values
+struct arg_ret { // to pass arguments to pthreads and get return values
     Taskgroup *tg;
     int N;
     Stack (*f_zones)(Taskgroup);
@@ -21,6 +23,8 @@ struct arg_ret { // to pass arguments to pthreads and get values
     int failed;
 };
 typedef struct arg_ret Arg_ret;
+
+bool OTF = false; // true if we generate on the fly, false otherwise
 
 void benchmark(Arg_ret *arg_ret)
 // benchmarks the algorithm using f_zones for part I and schedule for part II.
@@ -120,10 +124,17 @@ void wrapper_fun(Taskgroup tg)
     }
 }
 
-int main()
+int main(int argc, char *argv[])
 {
 #ifndef DEBUG
-
+    if(argc == 2)
+        if(!strcmp(argv[1], "-otf"))
+            OTF = true;
+    if (!OTF) {
+        printf("Generating...\n");
+        test_gen();
+    }
+    printf("Benchmarking on %ld threads...\n", Nproc);
     char name[100];
     pthread_t threads[Nproc];
     mkdir("results", S_IRWXU);
@@ -136,11 +147,18 @@ int main()
 
         /* opens the file, extracts the taskgroups and sorts them */
 
-        sprintf(name, "sched_tests/test_n=%d.in", n);
+        Taskgroup *taskgroups;
+        if (!OTF) {
+            sprintf(name, "sched_tests/test_n=%d.in", n);
+            FILE *src = fopen(name, "r");
+            taskgroups = get_taskgroups(src, &N);
+            fclose(src);
+        }
+        else {
+            taskgroups = get_generate_testcases(Ntests, n);
+            N = Ntests;
+        }
         double elapsed = 0;
-        FILE *src = fopen(name, "r");
-        Taskgroup *taskgroups = get_taskgroups(src, &N);
-        fclose(src);
         for (int i = 0; i < N; i++)
             qsort(taskgroups[i].tasks, taskgroups[i].n, sizeof(Task),
                   cmp_func_r_time);
@@ -207,9 +225,7 @@ int main()
 
         /* frees the taskgroups */
 
-        for (int i = 0; i < N; i++)
-            free(taskgroups[i].tasks);
-        free(taskgroups);
+        free_taskgroups(taskgroups, N);
         free(args);
     }
 

@@ -353,3 +353,10 @@ bool is_valid(Taskgroup tg, int *schedule)
             return false;
     return true;
 }
+
+void free_taskgroups(Taskgroup *tgs, int N)
+{
+    for (int i = 0; i < N; i++)
+        free(tgs[i].tasks);
+    free(tgs);
+}
