@@ -8,7 +8,7 @@ CFLAGS=-O3 -Wall
 all: $(FICHIERS_C) $(FICHIERS_H) $(BENCH_EXEC)
 	./$(BENCH_EXEC) -otf
 	python3 save_graph.py
-	firefox graphs.png 
+	firefox graphs.svg
 	
 bin:
 	mkdir -p bin
@@ -31,7 +31,7 @@ clean: tmp #removes everything except save_graph.py, README.md, src/, and makefi
 	$(RM) sched_tests/*.in
 	$(RM) -r bin/
 	$(RM) -r results/
-	$(RM) graphs.png
+	$(RM) graphs.svg
 	cp makefile save_graph.py README.md tmp/
 	-$(RM) *
 	cp tmp/README.md tmp/save_graph.py tmp/makefile .

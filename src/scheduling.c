@@ -344,13 +344,19 @@ int *schedule_greedy(Taskgroup tg)
     return schedule;
 }
 
+// checks if a given schedule is valid
 bool is_valid(Taskgroup tg, int *schedule)
 {
-    // checks if a given schedule is valid
+    // respect of deadlines
     for (int i = 0; i < tg.n; i++)
         if (schedule[i] < tg.tasks[i].release_time ||
             schedule[i] + D > tg.tasks[i].deadline)
             return false;
+    // no collision
+    for (int i = 0; i < tg.n; i++)
+        for (int j = i + 1; j < tg.n; j++)
+            if (abs(schedule[i] - schedule[j]) < D)
+                return false;
     return true;
 }
 

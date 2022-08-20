@@ -16,12 +16,10 @@ typedef struct node Node;
 
 // we put the nodes in a contiguous area of memory to limit the number of calls
 // to malloc()
-struct forest {
+typedef struct {
     Node *nodes;
-    int last;
-    int maxsize;
-};
-typedef struct forest Forest;
+    int size; // size is the number of nodes, not the maximum capacity
+} Forest;
 
 Forest create_empty_f(int n);
 void fill_forest(Forest *f, Taskgroup *tg);

@@ -2,13 +2,15 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h> //to call mkdir
-#include <time.h>
 #include <string.h>
+#include <sys/stat.h> //to call mkdir
+#include <sys/time.h>
+#include <unistd.h>
 
 #include "const.h"
 #include "scheduling.h"
 #include "scheduling_mael.h"
+#include "scheduling_per.h"
 #include "stack.h"
 #include "test_gen.h"
 
@@ -30,51 +32,57 @@ void benchmark(Arg_ret *arg_ret)
 // benchmarks the algorithm using f_zones for part I and schedule for part II.
 // Returns failrate
 {
-    clock_t start, end;
+    long start, end;
+    struct timeval timecheck;
     int failed = 0;
     double elapsed = 0;
     for (int i = 0; i < arg_ret->N; i++) {
 
-        start = clock();
+        /* START TIME */
+        gettimeofday(&timecheck, NULL);
+        start = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
 
         // try to greedily solve the pb, call the real algorithm if it fails
         int *schedule = schedule_greedy(arg_ret->tg[i]);
+        if (!schedule) {
+            Stack st = arg_ret->f_zones(arg_ret->tg[i]);
+
+            schedule = arg_ret->f_schedule(arg_ret->tg[i], st);
+            free_stack(&st);
+        }
+
+        /* END TIME */
+        gettimeofday(&timecheck, NULL);
+        end = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
+
         if (schedule) {
             assert(is_valid(arg_ret->tg[i], schedule));
             free(schedule);
         }
         else {
-            Stack st = arg_ret->f_zones(arg_ret->tg[i]);
-
-            int *schedule = arg_ret->f_schedule(arg_ret->tg[i], st);
-            free_stack(&st);
-            if (schedule) {
-                assert(is_valid(arg_ret->tg[i], schedule));
-                free(schedule);
-            }
-            else {
-                failed++;
-            }
+            failed++;
         }
 
-        end = clock();
-        elapsed += (1000 * (double)(end - start));
+        elapsed += (double)(end - start);
     }
     // calculates average time and failure rate
-    arg_ret->elapsed = elapsed / (arg_ret->N * CLOCKS_PER_SEC);
+    arg_ret->elapsed = elapsed / (arg_ret->N);
     arg_ret->failed = failed;
 }
-/*
+
 void benchmark_mael(Taskgroup *tg, int N, FILE *save)
 {
-    clock_t start, end;
+    long start, end;
+    struct timeval timecheck;
     double elapsed = 0;
     Route *elems;
     Ensemble *ens;
 
     for (int i = 0; i < N; i++) {
 
-        start = clock();
+        /* START TIME */
+        gettimeofday(&timecheck, NULL);
+        start = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
 
         elems = init_element(); // Filling the chained list with tasks
         for (int j = 0; j < tg->n; j++)
@@ -87,13 +95,16 @@ void benchmark_mael(Taskgroup *tg, int N, FILE *save)
             libereens(ens);
         freeelems(elems);
 
-        end = clock();
-        elapsed += (1000 * (double)(end - start));
+        /* END TIME */
+        gettimeofday(&timecheck, NULL);
+        end = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
+
+        elapsed += (double)(end - start);
     }
     // calculates average time and failure rate
-    fprintf(save, "%.6f ", elapsed / (N * CLOCKS_PER_SEC));
+    fprintf(save, "%.3f ", elapsed / N);
 }
-*/
+
 void *benchmark_splitted(void *args)
 {
     benchmark((Arg_ret *)args);
@@ -127,8 +138,8 @@ void wrapper_fun(Taskgroup tg)
 int main(int argc, char *argv[])
 {
 #ifndef DEBUG
-    if(argc == 2)
-        if(!strcmp(argv[1], "-otf"))
+    if (argc == 2)
+        if (!strcmp(argv[1], "-otf"))
             OTF = true;
     if (!OTF) {
         printf("Generating...\n");
@@ -189,7 +200,7 @@ int main(int argc, char *argv[])
             failed1 += args[i].failed;
             elapsed += args[i].elapsed;
         }
-        fprintf(save, "%.3f ", elapsed);
+        fprintf(save, "%.3f ", elapsed / Nproc);
         elapsed = 0;
 
         // quadratic Part I and quasi-linear Part II
@@ -203,7 +214,7 @@ int main(int argc, char *argv[])
             failed2 += args[i].failed;
             elapsed += args[i].elapsed;
         }
-        fprintf(save, "%.3f ", elapsed);
+        fprintf(save, "%.3f ", elapsed / Nproc);
         elapsed = 0;
 
         // quasi-linear Part I and quadratic Part II
@@ -213,10 +224,10 @@ int main(int argc, char *argv[])
         // quasi-linear Part I and quasi-linear Part II
         // double failrate4 = benchmark(taskgroups, N, save, f_zones_q_linear,
         // schedule_quadratic);
-        fprintf(save, "0 0 0 ");
+        fprintf(save, "0 0 ");
 
         // Mael's implementation of Simons' algorithm
-        // benchmark_mael(taskgroups, N, save);
+        benchmark_mael(taskgroups, N, save);
 
         assert(failed1 == failed2);
         // assert(failed1 == failed3);
@@ -234,11 +245,18 @@ int main(int argc, char *argv[])
     // for debug purposes
     int N = 0;
     FILE *src = fopen("sched_tests/debug", "r");
-    Taskgroup *taskgroups = get_taskgroups(src, &N); // gets the taskgroups
+    Taskgroup *tg_per = get_taskgroups(src, &N);
     fclose(src);
-    qsort(taskgroups[0].tasks, taskgroups[0].n, sizeof(Task), cmp_func_r_time);
 
-    wrapper_fun(taskgroups[0]);
+    int *schedule = schedule_per(*tg_per);
+
+    if (schedule) {
+        show_tasks(*tg_per);
+        show_schedule(schedule, tg_per->n);
+        assert(is_valid_per(*tg_per, schedule));
+        free(schedule);
+    }
+    free_taskgroups(tg_per, N);
 #endif
     return 0;
 }

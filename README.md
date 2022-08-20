@@ -2,7 +2,7 @@
 
 A benchmark of some algorithms for scheduling n tasks, each having a release time and a deadline. All tasks have the same duration. The first algorithm has two parts, both of which can be implemented in O(n²) or O(nlogn) time, which gives 4 combinations. The second algorithm is in `scheduling_mael.c` ans is technically wrong but still correct most of the time.
 
-Type `make` to compile and execute the generation of random tests as well as the benchmark. It also creates a plot and shows it.
+Type `make` to compile and execute the generation of random tests as well as the benchmark. It also creates a plot and shows it. The option `-otf` enables On The Fly mode, which means that instead of generating the tests in files on the disk, they are generated on the fly as needed. 
 
 ## The code
 

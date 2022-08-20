@@ -38,20 +38,20 @@ with open("results/times.out") as file:
     
     host.plot(x, y1, 'C1')
     host.plot(x, y2, 'C2')
-    host.plot(x, y3, 'C3')
-    host.plot(x, y4, 'C4')
+    #host.plot(x, y3, 'C3')
+    #host.plot(x, y4, 'C4')
     host.plot(x, y5, 'C5')
     p1.plot(x, y_f, 'C6')
     
     host.legend(["Part I in O(n²), Part II in O(n²)",
                  "Part I in O(n²), Part II in O(nlogn)",
-                 "Part I in O(nlogn), Part II in O(n²)",
-                 "Part I in O(n²), Part II in O(n²)",
-                 "Simons' algorithm"],
+                 #"Part I in O(nlogn), Part II in O(n²)",
+                 #"Part I in O(nlogn), Part II in O(nlogn)",
+                 "Mael's algorithm"],
                  loc="upper left")
     p1.legend(["Failure rate of the algorithms"], loc="upper right")
     
-    host.text(90, -0.003, f"Duration of a task : D = {D}\nDeadline max : dmax = (n + {add_c}) * D\nRelease time : in [0, {fact_r} * dmax]")
+    host.text(900, -1.7, f"Duration of a task : D = {D}\nDeadline max : dmax = (n + {add_c}) * D\nRelease time max : {fact_r} * dmax")
 
     plt.title("Average scheduling time depending on the number of tasks")
     host.set_xlabel("Number of tasks")
@@ -61,4 +61,4 @@ with open("results/times.out") as file:
     p1.set_ylim(0)
     
     plt.draw()
-    plt.savefig("graphs.png")
+    plt.savefig("graphs.svg")
